@@ -2,7 +2,7 @@
 *.o
 *.a
 *.so
-
+.idea
 # Executables
 bin/
 build/
