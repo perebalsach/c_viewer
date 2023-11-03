@@ -7,10 +7,10 @@ typedef struct {
     int a;
     int b;
     int c;
-} face_t;
+} Face_t ;
 
 typedef struct {
     vec2_t points[3];
-} triangle_t;
+} Triangle_t;
 
 #endif // TRIANGLE_H

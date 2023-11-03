@@ -7,7 +7,7 @@
 #include "vector.h"
 #include "mesh.h"
 
-triangle_t* triangles_to_render = NULL;
+Triangle_t* triangles_to_render = NULL;
 
 vec3_t camera_position = {.x = 0, .y = 0, .z = -5};
 
@@ -26,9 +26,7 @@ void setup(void) {
             window_height
             );
 
-    load_obj_file_data("/Users/pere.balsach/Documents/Projects/Pere/c_viewer/assets/monkey.obj");
-    // load_obj_file_data("/Users/pere.balsach/Documents/Projects/Pere/c_viewer/assets/cube.obj");
-    // load_cube_mesh_data();
+    load_obj_file_data("../../assets/monkey.obj");
 }
 
 void process_input(void) {
@@ -72,14 +70,16 @@ void update(void) {
 
     int num_faces = array_length(mesh.faces);
     for (int i = 0; i < num_faces; i++) {
-        face_t mesh_face = mesh.faces[i];
+        Face_t mesh_face = mesh.faces[i];
 
         vec3_t face_vertices[3];
         face_vertices[0] = mesh.vertices[mesh_face.a - 1];
         face_vertices[1] = mesh.vertices[mesh_face.b - 1];
         face_vertices[2] = mesh.vertices[mesh_face.c - 1];
 
-        triangle_t projected_triangle;
+        Triangle_t projected_triangle;
+
+        vec3_t transformed_vertices[3];
 
         for (int j = 0; j < 3; j++) {
             vec3_t transformed_vertex = face_vertices[j];
@@ -89,8 +89,25 @@ void update(void) {
             transformed_vertex = vec3_rotate_z(transformed_vertex, mesh.rotation.z);
 
             transformed_vertex.z -= camera_position.z;
+            transformed_vertices[j] = transformed_vertex;
+        }
 
-            vec2_t projected_point = project(transformed_vertex);
+        // Check backface culling
+        vec3_t vector_a = transformed_vertices[0];
+        vec3_t vector_b = transformed_vertices[1];
+        vec3_t vector_c = transformed_vertices[2];
+
+        vec3_t vector_ab = vec3_sub(vector_b, vector_a);
+        vec3_t vector_ac = vec3_sub(vector_c, vector_a);
+
+        // Compute face normal
+        vec3_t normal = vec3_cross(vector_ab, vector_ac);
+
+        // Find the vector between a point in the triangle and the camera
+
+
+        for (int j = 0; j < 3; j++) {
+            vec2_t projected_point = project(transformed_vertices[j]);
 
             projected_point.x += (window_width / 2);
             projected_point.y += (window_height / 2);
@@ -108,7 +125,7 @@ void render(void) {
 
     // Loop all projected triangles and render them
     for (int i = 0; i < num_triangles; i++) {
-        triangle_t triangle = triangles_to_render[i];
+        Triangle_t triangle = triangles_to_render[i];
         draw_rect(triangle.points[0].x, triangle.points[0].y, 3, 3, 0xFFFFFF00);
         draw_rect(triangle.points[1].x, triangle.points[1].y, 3, 3, 0xFFFFFF00);
         draw_rect(triangle.points[2].x, triangle.points[2].y, 3, 3, 0xFFFFFF00);
@@ -125,11 +142,8 @@ void render(void) {
     }
 
     array_free(triangles_to_render);
-
     render_color_buffer();
-
     clear_color_buffer(0x4e5052);
-
     SDL_RenderPresent(renderer);
 }
 
