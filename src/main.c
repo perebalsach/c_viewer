@@ -9,7 +9,7 @@
 
 Triangle_t* triangles_to_render = NULL;
 
-vec3_t camera_position = {.x = 0, .y = 0, .z = -5};
+vec3_t camera_position = {.x = 0, .y = 0, .z = 0};
 
 const int fov = 640;
 
@@ -77,8 +77,6 @@ void update(void) {
         face_vertices[1] = mesh.vertices[mesh_face.b - 1];
         face_vertices[2] = mesh.vertices[mesh_face.c - 1];
 
-        Triangle_t projected_triangle;
-
         vec3_t transformed_vertices[3];
 
         for (int j = 0; j < 3; j++) {
@@ -88,23 +86,35 @@ void update(void) {
             transformed_vertex = vec3_rotate_y(transformed_vertex, mesh.rotation.y);
             transformed_vertex = vec3_rotate_z(transformed_vertex, mesh.rotation.z);
 
-            transformed_vertex.z -= camera_position.z;
+            transformed_vertex.z += 5;
             transformed_vertices[j] = transformed_vertex;
         }
 
-        // Check backface culling
-        vec3_t vector_a = transformed_vertices[0];
-        vec3_t vector_b = transformed_vertices[1];
-        vec3_t vector_c = transformed_vertices[2];
+        // Check backface Culling
+        vec3_t vector_a = transformed_vertices[0]; /*   A   */
+        vec3_t vector_b = transformed_vertices[1]; /*  / \  */
+        vec3_t vector_c = transformed_vertices[2]; /* C---B */
 
+        // Get the vector subtraction of B-A and C-A
         vec3_t vector_ab = vec3_sub(vector_b, vector_a);
         vec3_t vector_ac = vec3_sub(vector_c, vector_a);
 
-        // Compute face normal
+        // Compute the face normal (using cross product to find perpendicular)
         vec3_t normal = vec3_cross(vector_ab, vector_ac);
+        vec3_normalize(&normal);
 
-        // Find the vector between a point in the triangle and the camera
+        // Find the vector between a point in the triangle and the camera origin
+        vec3_t camera_ray = vec3_sub(camera_position, vector_a );
 
+        // Calculate how aligned the camera ray is with the face normal (using dot product)
+        float dot_normal_camera = vec3_dot(normal, camera_ray);
+
+        // Bypass the triangles that are looking away from the camera
+        if (dot_normal_camera < 0) {
+            continue;
+        }
+
+        Triangle_t projected_triangle;
 
         for (int j = 0; j < 3; j++) {
             vec2_t projected_point = project(transformed_vertices[j]);
