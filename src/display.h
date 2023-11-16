@@ -8,6 +8,18 @@
 #define FPS 30
 #define FRAME_TARGET_TIME (1000 / FPS)
 
+enum cull_method {
+    CULL_NONE,
+    CULL_BACKFACE
+} cull_method;
+
+enum render_method {
+    WIREFRAME,
+    WIREFRAME_DOTS,
+    SHADED,
+    WIREFRAME_SHADED
+} render_method;
+
 extern int window_width;
 extern int window_height;
 
