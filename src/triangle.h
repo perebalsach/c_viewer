@@ -12,6 +12,8 @@ typedef struct {
 
 typedef struct {
     vec2_t points[3];
+    uint32_t color;
+    float avg_depth;
 } Triangle_t;
 
 void int_swap(int* a, int* b);

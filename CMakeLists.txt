@@ -4,6 +4,9 @@ project(viewer)
 # Set C standard to C11
 set(CMAKE_C_STANDARD 11)
 
+# Specify the path to the SDL2 library (change the path accordingly)
+set(SDL2_LIBRARY_PATH "/opt/homebrew/Cellar/sdl2/2.28.3/lib")
+
 # Include SDL2 headers
 set(SDL2_INCLUDE_DIR "/opt/homebrew/Cellar/sdl2/2.28.3/include")
 include_directories(${SDL2_INCLUDE_DIR})
@@ -25,6 +28,4 @@ target_link_libraries(viewer ${SDL2_LIBRARIES})
 # Add linker flags
 target_link_options(viewer PRIVATE -lm -lSDL2)
 
-# Specify the path to the SDL2 library (change the path accordingly)
-set(SDL2_LIBRARY_PATH "/opt/homebrew/Cellar/sdl2/2.28.3/lib")
 target_link_directories(viewer PRIVATE ${SDL2_LIBRARY_PATH})
