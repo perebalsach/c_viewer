@@ -67,23 +67,6 @@ vec2_t project(vec3_t point) {
 	return projected_point;
 }
 
-void swap(int* a, int* b) {
-	int tmp = *a;
-	*a = *b;
-	*b = tmp;
-}
-
-void bubble_short(int arr[], int n) {
-	int i, j;
-	bool swapped;
-	for (int i = 0; i < n - 1; ++i) {
-		if (arr[i] > arr[i+1]) {
-			swap(&arr[i], &arr[i+1]);
-			swapped = true;
-		}
-	}
-}
-
 void update(void) {
 
 	int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - previous_frame_time);
