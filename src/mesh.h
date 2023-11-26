@@ -5,9 +5,11 @@
 #include "triangle.h"
 
 typedef struct {
-    vec3_t* vertices;
-    Face_t* faces;
-    vec3_t rotation;
+	vec3_t *vertices;
+	Face_t *faces;
+	vec3_t rotation;
+	vec3_t scale;
+	vec3_t translation;
 } mesh_t;
 
 extern mesh_t mesh;

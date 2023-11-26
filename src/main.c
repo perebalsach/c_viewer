@@ -6,8 +6,10 @@
 #include "display.h"
 #include "vector.h"
 #include "mesh.h"
+#include "sorting.h"
+#include "matrix.h"
 
-Triangle_t* triangles_to_render = NULL;
+Triangle_t *triangles_to_render = NULL;
 
 vec3_t camera_position = {.x = 0, .y = 0, .z = 0};
 
@@ -20,49 +22,49 @@ void setup(void) {
 	render_method = WIREFRAME;
 	cull_method = CULL_BACKFACE;
 
-	color_buffer = (uint32_t*) malloc(sizeof(uint32_t) * window_width * window_height);
+	color_buffer = (uint32_t *) malloc(sizeof(uint32_t) * window_width * window_height);
 	color_buffer_texture = SDL_CreateTexture(
 			renderer,
 			SDL_PIXELFORMAT_ARGB8888,
 			SDL_TEXTUREACCESS_STREAMING,
 			window_width,
 			window_height
-			);
+	);
 
-	load_obj_file_data("../../assets/cube.obj");
+	load_obj_file_data("../assets/monkey.obj");
 }
 
 void process_input(void) {
 	SDL_Event event;
 	SDL_PollEvent(&event);
 
-	switch(event.type) {
+	switch (event.type) {
 		case SDL_QUIT:
 			is_running = false;
 			break;
 		case SDL_KEYDOWN:
-		   if (event.key.keysym.sym == SDLK_ESCAPE) {
-			   is_running = false;
-		   } else if (event.key.keysym.sym == SDLK_1) {
-			   render_method = WIREFRAME_DOTS;
-		   } else if (event.key.keysym.sym == SDLK_2) {
-			   render_method = WIREFRAME;
-		   } else if (event.key.keysym.sym == SDLK_3) {
-			   render_method = SHADED;
-		   } else if (event.key.keysym.sym == SDLK_4) {
-			   render_method = WIREFRAME_SHADED;
-		   } else if (event.key.keysym.sym == SDLK_c) {
-			   cull_method = CULL_BACKFACE;
-		   } else if (event.key.keysym.sym == SDLK_d) {
-			   cull_method = CULL_NONE;
-		   }
-	  }
+			if (event.key.keysym.sym == SDLK_ESCAPE) {
+				is_running = false;
+			} else if (event.key.keysym.sym == SDLK_1) {
+				render_method = WIREFRAME_DOTS;
+			} else if (event.key.keysym.sym == SDLK_2) {
+				render_method = WIREFRAME;
+			} else if (event.key.keysym.sym == SDLK_3) {
+				render_method = SHADED;
+			} else if (event.key.keysym.sym == SDLK_4) {
+				render_method = WIREFRAME_SHADED;
+			} else if (event.key.keysym.sym == SDLK_c) {
+				cull_method = CULL_BACKFACE;
+			} else if (event.key.keysym.sym == SDLK_d) {
+				cull_method = CULL_NONE;
+			}
+	}
 }
 
 vec2_t project(vec3_t point) {
 	vec2_t projected_point = {
-		.x = (fov * point.x) / point.z,
-		.y = (fov * point.y) / point.z
+			.x = (fov * point.x) / point.z,
+			.y = (fov * point.y) / point.z
 	};
 	return projected_point;
 }
@@ -71,7 +73,7 @@ void update(void) {
 
 	int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - previous_frame_time);
 
-	if(time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME) {
+	if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME) {
 		SDL_Delay(time_to_wait);
 	}
 
@@ -79,9 +81,20 @@ void update(void) {
 
 	triangles_to_render = NULL;
 
-	mesh.rotation.x += 0.00;
-	mesh.rotation.y += 0.01;
-	mesh.rotation.z += 0.00;
+	// mesh.rotation.x += 0.01;
+	// mesh.rotation.y += 0.01;
+	// mesh.rotation.z += 0.01;
+
+	// mesh.scale.x += 0.02;
+	// mesh.scale.y += 0.02;
+	// mesh.scale.z += 0.02;
+
+	mesh.translation.x += 0.01;
+	mesh.translation.z = 5;
+
+	// Scale and translation matrix
+	mat4_t scale_matrix = mat4_make_scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
+	mat4_t translation_matrix = mat4_make_translation(mesh.translation.x, mesh.translation.y, mesh.translation.z);
 
 	int num_faces = array_length(mesh.faces);
 	for (int i = 0; i < num_faces; i++) {
@@ -92,24 +105,25 @@ void update(void) {
 		face_vertices[1] = mesh.vertices[mesh_face.b - 1];
 		face_vertices[2] = mesh.vertices[mesh_face.c - 1];
 
-		vec3_t transformed_vertices[3];
+		vec4_t transformed_vertices[3];
 
+		// Loop all the vertices of this current face and apply transformations
 		for (int j = 0; j < 3; j++) {
-			vec3_t transformed_vertex = face_vertices[j];
+			vec4_t transformed_vertex = vec4_from_vec3(face_vertices[j]);
 
-			transformed_vertex = vec3_rotate_x(transformed_vertex, mesh.rotation.x);
-			transformed_vertex = vec3_rotate_y(transformed_vertex, mesh.rotation.y);
-			transformed_vertex = vec3_rotate_z(transformed_vertex, mesh.rotation.z);
+			// Use a matrix to scale vertex
+			transformed_vertex = mat4_mul_vec4(scale_matrix, transformed_vertex);
+			transformed_vertex = mat4_mul_vec4(translation_matrix, transformed_vertex);
 
-			transformed_vertex.z += 5;
+			// Save transformed vertex in the array of transformed vertices
 			transformed_vertices[j] = transformed_vertex;
 		}
 
 		// Check backface Culling
 		if (cull_method == CULL_BACKFACE) {
-			vec3_t vector_a = transformed_vertices[0];
-			vec3_t vector_b = transformed_vertices[1];
-			vec3_t vector_c = transformed_vertices[2];
+			vec3_t vector_a = vec3_from_vec4(transformed_vertices[0]);
+			vec3_t vector_b = vec3_from_vec4(transformed_vertices[1]);
+			vec3_t vector_c = vec3_from_vec4(transformed_vertices[2]);
 
 			// Get the vector subtraction of B-A and C-A
 			vec3_t vector_ab = vec3_sub(vector_b, vector_a);
@@ -120,7 +134,7 @@ void update(void) {
 			vec3_normalize(&normal);
 
 			// Find the vector between a point in the triangle and the camera origin
-			vec3_t camera_ray = vec3_sub(camera_position, vector_a );
+			vec3_t camera_ray = vec3_sub(camera_position, vector_a);
 
 			// Calculate how aligned the camera ray is with the face normal (using dot product)
 			float dot_normal_camera = vec3_dot(normal, camera_ray);
@@ -133,38 +147,30 @@ void update(void) {
 		vec2_t projected_points[3];
 
 		for (int j = 0; j < 3; j++) {
-			projected_points[j] = project(transformed_vertices[j]);
+			projected_points[j] = project(vec3_from_vec4(transformed_vertices[j]));
 
 			projected_points[j].x += (window_width / 2);
 			projected_points[j].y += (window_height / 2);
 		}
 
 		// Calculate the average depth
-		float avg_depth = (transformed_vertices[0].z + transformed_vertices[1].z + transformed_vertices[2].z) / 3;
+		float avg_depth = (transformed_vertices[0].z + transformed_vertices[1].z + transformed_vertices[2].z) / 3.0;
 		Triangle_t projected_triangle = {
-				.points = {
-						{projected_points[0].x, projected_points[0].y },
-						{projected_points[1].x, projected_points[1].y },
-						{projected_points[2].x, projected_points[2].y }
-				},
-				.color = 0xFF00FF00,
-				.avg_depth = avg_depth
+			.points = {
+				{projected_points[0].x, projected_points[0].y},
+				{projected_points[1].x, projected_points[1].y},
+				{projected_points[2].x, projected_points[2].y}
+			},
+			.color = 0xFF00FF00,
+			.avg_depth = avg_depth
 		};
 
 		array_push(triangles_to_render, projected_triangle);
 	}
 
-	// Sort triangles by the avg depth
-	int num_triangles = array_length(triangles_to_render);
-	for (int i = 0; i < num_triangles; ++i) {
-		for (int j = i; j < num_triangles; ++j) {
-			if (triangles_to_render[i].avg_depth < triangles_to_render[j].avg_depth) {
-				Triangle_t temp = triangles_to_render[i];
-				triangles_to_render[i] = triangles_to_render[j];
-				triangles_to_render[j] = temp;
-			}
-		}
-	}
+	// Sort triangles by the avg depth with the quick sort algorithm
+	int n = sizeof(triangles_to_render[0]) / sizeof(triangles_to_render);
+	quick_sort(triangles_to_render, 0, n - 1);
 }
 
 

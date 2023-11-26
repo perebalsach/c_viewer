@@ -55,7 +55,7 @@ void draw_filled_triangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32
        fill_flat_top_triangle(x0, y0, x1, y1, x2, y2, color);
    } else {
 
-       // Calculate the mid point of the triangle
+       // Calculate the mid-point of the triangle
        int My = y1;
        int Mx = ((float) ((x2 - x0) * (y1 - y0)) / (float) (y2 - y0)) + x0;
 
