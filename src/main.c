@@ -81,20 +81,15 @@ void update(void) {
 
 	triangles_to_render = NULL;
 
-	// mesh.rotation.x += 0.01;
-	// mesh.rotation.y += 0.01;
-	// mesh.rotation.z += 0.01;
-
-	// mesh.scale.x += 0.02;
-	// mesh.scale.y += 0.02;
-	// mesh.scale.z += 0.02;
-
-	mesh.translation.x += 0.01;
+	mesh.rotation.x += 0.01;
 	mesh.translation.z = 5;
 
-	// Scale and translation matrix
+	// Scale translation and rotation matrices
 	mat4_t scale_matrix = mat4_make_scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
 	mat4_t translation_matrix = mat4_make_translation(mesh.translation.x, mesh.translation.y, mesh.translation.z);
+	mat4_t rotation_matrix_x = mat4_make_rotation_x(mesh.rotation.x);
+	mat4_t rotation_matrix_y = mat4_make_rotation_y(mesh.rotation.y);
+	mat4_t rotation_matrix_z = mat4_make_rotation_z(mesh.rotation.z);
 
 	int num_faces = array_length(mesh.faces);
 	for (int i = 0; i < num_faces; i++) {
@@ -113,6 +108,9 @@ void update(void) {
 
 			// Use a matrix to scale vertex
 			transformed_vertex = mat4_mul_vec4(scale_matrix, transformed_vertex);
+			transformed_vertex = mat4_mul_vec4(rotation_matrix_x, transformed_vertex);
+			transformed_vertex = mat4_mul_vec4(rotation_matrix_y, transformed_vertex);
+			transformed_vertex = mat4_mul_vec4(rotation_matrix_z, transformed_vertex);
 			transformed_vertex = mat4_mul_vec4(translation_matrix, transformed_vertex);
 
 			// Save transformed vertex in the array of transformed vertices
@@ -219,7 +217,7 @@ void free_resources(void) {
 	array_free(mesh.vertices);
 }
 
-int main(void) {
+int main(int argc, char *argv[]) {
 	is_running = initialize_window();
 
 	setup();
