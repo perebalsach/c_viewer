@@ -9,7 +9,7 @@
 #include "sorting.h"
 #include "matrix.h"
 
-Triangle_t *triangles_to_render = NULL;
+triangle_t *triangles_to_render = NULL;
 
 bool is_running = false;
 int previous_frame_time = 0;
@@ -21,7 +21,7 @@ void setup(void) {
 	render_method = RENDER_WIRE_VERTEX;
 	cull_method = CULL_BACKFACE;
 
-	color_buffer = (uint32_t *) malloc(sizeof(uint32_t) * window_width * window_height);
+	color_buffer = (uint32_t*)malloc(sizeof(uint32_t) * window_width * window_height);
 	color_buffer_texture = SDL_CreateTexture(
 			renderer,
 			SDL_PIXELFORMAT_ARGB8888,
@@ -37,8 +37,9 @@ void setup(void) {
 	float zfar = 100.0;
 	proj_matrix = mat4_make_perspective(fov, aspect, znear, zfar);
 
-	// load_obj_file_data("../../assets/monkey.obj");
-	load_cube_mesh_data();
+	// Loads the mesh
+	// load_cube_mesh_data();
+	load_obj_file_data("../../assets/monkey.obj");
 }
 
 void process_input(void) {
@@ -97,7 +98,7 @@ void update(void) {
 	// Loop all triangle faces of our mesh
 	int num_faces = array_length(mesh.faces);
 	for (int i = 0; i < num_faces; i++) {
-		Face_t mesh_face = mesh.faces[i];
+		face_t mesh_face = mesh.faces[i];
 
 		vec3_t face_vertices[3];
 		face_vertices[0] = mesh.vertices[mesh_face.a - 1];
@@ -174,7 +175,7 @@ void update(void) {
 		// Calculate the average depth for each face based on the vertices after transformation
 		float avg_depth = (transformed_vertices[0].z + transformed_vertices[1].z + transformed_vertices[2].z) / 3.0;
 
-		Triangle_t projected_triangle = {
+		triangle_t projected_triangle = {
 				.points = {
 						{ projected_points[0].x, projected_points[0].y },
 						{ projected_points[1].x, projected_points[1].y },
@@ -200,7 +201,7 @@ void render(void) {
 	// Loop all projected triangles and render them
 	int num_triangles = array_length(triangles_to_render);
 	for (int i = 0; i < num_triangles; i++) {
-		Triangle_t triangle = triangles_to_render[i];
+		triangle_t triangle = triangles_to_render[i];
 
 		// Draw filled triangle
 		if (render_method == RENDER_FILL_TRIANGLE || render_method == RENDER_FILL_TRIANGLE_WIRE) {
@@ -233,7 +234,7 @@ void render(void) {
 	// Clear the array of triangles to render every frame loop
 	array_free(triangles_to_render);
 	render_color_buffer();
-	clear_color_buffer(0xFF000000);
+	clear_color_buffer(0xFF0000FF);
 	SDL_RenderPresent(renderer);
 }
 

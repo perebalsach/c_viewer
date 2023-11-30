@@ -9,7 +9,7 @@
 
 typedef struct {
 	vec3_t *vertices;
-	Face_t *faces;
+	face_t *faces;
 	vec3_t rotation;
 	vec3_t scale;
 	vec3_t translation;

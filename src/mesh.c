@@ -1,8 +1,7 @@
-#include "array.h"
-#include "mesh.h"
 #include <stdio.h>
 #include <string.h>
-#include <string.h>
+#include "array.h"
+#include "mesh.h"
 
 mesh_t mesh = {
 		.vertices = NULL,
@@ -23,7 +22,7 @@ vec3_t cube_vertices[N_CUBE_VERTICES] = {
 		{ .x = -1, .y = -1, .z =  1 }  // 8
 };
 
-Face_t cube_faces[N_CUBE_FACES] = {
+face_t cube_faces[N_CUBE_FACES] = {
 		// front
 		{ .a = 1, .b = 2, .c = 3, .color = 0xFFFF0000 },
 		{ .a = 1, .b = 3, .c = 4, .color = 0xFFFF0000 },
@@ -50,7 +49,7 @@ void load_cube_mesh_data(void) {
 		array_push(mesh.vertices, cube_vertex);
 	}
 	for (int i = 0; i < N_CUBE_FACES; i++) {
-		Face_t cube_face = cube_faces[i];
+		face_t cube_face = cube_faces[i];
 		array_push(mesh.faces, cube_face);
 	}
 }
@@ -81,7 +80,7 @@ void load_obj_file_data(char *filename) {
 					&vertex_indices[1], &texture_indices[1], &normal_indices[1],
 					&vertex_indices[2], &texture_indices[2], &normal_indices[2]
 			);
-			Face_t face = {
+			face_t face = {
 					.a = vertex_indices[0],
 					.b = vertex_indices[1],
 					.c = vertex_indices[2]
