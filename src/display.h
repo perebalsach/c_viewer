@@ -15,10 +15,10 @@ enum cull_method {
 } cull_method;
 
 enum render_method {
-    WIREFRAME,
-    WIREFRAME_DOTS,
-    SHADED,
-    WIREFRAME_SHADED
+	RENDER_WIRE,
+	RENDER_WIRE_VERTEX,
+	RENDER_FILL_TRIANGLE,
+	RENDER_FILL_TRIANGLE_WIRE
 } render_method;
 
 extern int window_width;
