@@ -11,12 +11,11 @@
 
 Triangle_t *triangles_to_render = NULL;
 
-vec3_t camera_position = {.x = 0, .y = 0, .z = 0};
-
-const int fov = 640;
-
 bool is_running = false;
 int previous_frame_time = 0;
+
+vec3_t camera_position = {.x = 0, .y = 0, .z = 0};
+mat4_t proj_matrix;
 
 void setup(void) {
 	render_method = WIREFRAME;
@@ -31,7 +30,15 @@ void setup(void) {
 			window_height
 	);
 
-	load_obj_file_data("../assets/monkey.obj");
+	// Create perspective projection matrix
+	float fov = M_PI / 3.0; // 60deg same as 180/3
+	float aspect = (float)window_height / (float)window_width;
+	float znear = 0.1;
+	float zfar = 100.0;
+	proj_matrix = mat4_make_perspective(fov, aspect, znear, zfar);
+
+	load_obj_file_data("../../assets/monkey.obj");
+	load_cube_mesh_data();
 }
 
 void process_input(void) {
@@ -61,14 +68,6 @@ void process_input(void) {
 	}
 }
 
-vec2_t project(vec3_t point) {
-	vec2_t projected_point = {
-			.x = (fov * point.x) / point.z,
-			.y = (fov * point.y) / point.z
-	};
-	return projected_point;
-}
-
 void update(void) {
 
 	int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - previous_frame_time);
@@ -82,7 +81,7 @@ void update(void) {
 	triangles_to_render = NULL;
 
 	mesh.rotation.x += 0.01;
-	mesh.translation.z = 5;
+	mesh.translation.z = 5.0;
 
 	// Scale translation and rotation matrices
 	mat4_t scale_matrix = mat4_make_scale(mesh.scale.x, mesh.scale.y, mesh.scale.z);
@@ -102,18 +101,21 @@ void update(void) {
 
 		vec4_t transformed_vertices[3];
 
+		mat4_t world_matrix = mat4_identity();
 		// Loop all the vertices of this current face and apply transformations
 		for (int j = 0; j < 3; j++) {
 			vec4_t transformed_vertex = vec4_from_vec3(face_vertices[j]);
 
 			// Use a matrix to scale vertex
-			transformed_vertex = mat4_mul_vec4(scale_matrix, transformed_vertex);
-			transformed_vertex = mat4_mul_vec4(rotation_matrix_x, transformed_vertex);
-			transformed_vertex = mat4_mul_vec4(rotation_matrix_y, transformed_vertex);
-			transformed_vertex = mat4_mul_vec4(rotation_matrix_z, transformed_vertex);
-			transformed_vertex = mat4_mul_vec4(translation_matrix, transformed_vertex);
+			world_matrix = mat4_mul_mat4(scale_matrix, world_matrix);
+			world_matrix = mat4_mul_mat4(rotation_matrix_x, world_matrix);
+			world_matrix = mat4_mul_mat4(rotation_matrix_y, world_matrix);
+			world_matrix = mat4_mul_mat4(rotation_matrix_z, world_matrix);
+			world_matrix = mat4_mul_mat4(translation_matrix, world_matrix);
 
 			// Save transformed vertex in the array of transformed vertices
+			transformed_vertex = mat4_mul_vec4(world_matrix, transformed_vertex);
+
 			transformed_vertices[j] = transformed_vertex;
 		}
 
@@ -142,13 +144,19 @@ void update(void) {
 			}
 		}
 
-		vec2_t projected_points[3];
-
+		vec4_t projected_points[3];
+		// Loop all the 3 vertices to perform projection
 		for (int j = 0; j < 3; j++) {
-			projected_points[j] = project(vec3_from_vec4(transformed_vertices[j]));
+			projected_points[j] = mat4_mult_vec4_project(proj_matrix, transformed_vertices[j]);
 
-			projected_points[j].x += (window_width / 2);
-			projected_points[j].y += (window_height / 2);
+			// Scale the projected points into the view
+			projected_points[j].x *= (float)(window_width/2.0);
+			projected_points[j].y *= (float)(window_height/2.0);
+
+			// Translate the projected points to the middle of the screen
+			projected_points[j].x += (float)(window_width / 2.0);
+			projected_points[j].y += (float)(window_height / 2.0);
+
 		}
 
 		// Calculate the average depth
@@ -173,8 +181,9 @@ void update(void) {
 
 
 void render(void) {
-	int num_triangles = array_length(triangles_to_render);
+	SDL_RenderClear(renderer);
 
+	int num_triangles = array_length(triangles_to_render);
 	// Loop all projected triangles and render them
 	for (int i = 0; i < num_triangles; i++) {
 		Triangle_t triangle = triangles_to_render[i];
@@ -198,9 +207,9 @@ void render(void) {
 		}
 
 		if (render_method == WIREFRAME_DOTS) {
-			draw_rect(triangle.points[0].x, triangle.points[0].y, 3, 3, 0xFF1100);
-			draw_rect(triangle.points[1].x, triangle.points[1].y, 3, 3, 0xFF1100);
-			draw_rect(triangle.points[2].x, triangle.points[2].y, 3, 3, 0xFF1100);
+			draw_rect(triangle.points[0].x - 3, triangle.points[0].y -3, 6, 6, 0xFF1100);
+			draw_rect(triangle.points[1].x - 3, triangle.points[1].y -3, 6, 6, 0xFF1100);
+			draw_rect(triangle.points[2].x - 3, triangle.points[2].y -3, 6, 6, 0xFF1100);
 		}
 	}
 

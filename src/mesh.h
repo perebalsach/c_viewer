@@ -4,6 +4,9 @@
 #include "vector.h"
 #include "triangle.h"
 
+#define N_CUBE_VERTICES 8
+#define N_CUBE_FACES (6 * 2) // 6 cube faces, 2 triangles per face
+
 typedef struct {
 	vec3_t *vertices;
 	Face_t *faces;
@@ -14,6 +17,7 @@ typedef struct {
 
 extern mesh_t mesh;
 
+void load_cube_mesh_data(void);
 void load_obj_file_data(char* filename);
 
 #endif // MESH_H
