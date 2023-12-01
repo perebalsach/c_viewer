@@ -40,7 +40,7 @@ void setup(void) {
 
 	// Loads the mesh
 	// load_cube_mesh_data();
-	load_obj_file_data("../../assets/monkey.obj");
+	load_obj_file_data("../../assets/cube.obj");
 }
 
 void process_input(void) {
@@ -65,6 +65,12 @@ void process_input(void) {
 				cull_method = CULL_BACKFACE;
 			if (event.key.keysym.sym == SDLK_d)
 				cull_method = CULL_NONE;
+			if (event.key.keysym.sym == SDLK_g)
+				render_method == RENDER_FILL_SMOOTH_SHADED;
+			if (event.key.keysym.sym == SDLK_f)
+				render_method == RENDER_FILL_FLAT_SHADED;
+			if (event.key.keysym.sym == SDLK_n)
+				render_method == DISPLAY_NORMALS;
 			break;
 	}
 }
@@ -164,6 +170,9 @@ void update(void) {
 			// Project the current vertex
 			projected_points[j] = mat4_mult_vec4_project(proj_matrix, transformed_vertices[j]);
 
+			// Invert the y values to account for the flipped screen coords
+			projected_points[j].y *= - 1;
+
 			// Scale into the view
 			projected_points[j].x *= (window_width / 2.0);
 			projected_points[j].y *= (window_height / 2.0);
@@ -176,8 +185,8 @@ void update(void) {
 		// Calculate the average depth for each face based on the vertices after transformation
 		float avg_depth = (transformed_vertices[0].z + transformed_vertices[1].z + transformed_vertices[2].z) / 3.0;
 
+		// Calculate the percentage of the light against each normal and set the face color
 		float light_intensity_factor = -vec3_dot(normal, light.direction);
-		// Calculate the percentage of the light against each normal
 		uint32_t triangle_color = light_apply_intensity(mesh_face.color, light_intensity_factor);
 
 		triangle_t projected_triangle = {
@@ -208,6 +217,10 @@ void render(void) {
 	for (int i = 0; i < num_triangles; i++) {
 		triangle_t triangle = triangles_to_render[i];
 
+		if (render_method == RENDER_FILL_SMOOTH_SHADED) {
+
+		}
+
 		// Draw filled triangle
 		if (render_method == RENDER_FILL_TRIANGLE || render_method == RENDER_FILL_TRIANGLE_WIRE) {
 			draw_filled_triangle(
@@ -233,6 +246,9 @@ void render(void) {
 			draw_rect(triangle.points[0].x - 3, triangle.points[0].y - 3, 6, 6, 0xFFFF0000); // vertex A
 			draw_rect(triangle.points[1].x - 3, triangle.points[1].y - 3, 6, 6, 0xFFFF0000); // vertex B
 			draw_rect(triangle.points[2].x - 3, triangle.points[2].y - 3, 6, 6, 0xFFFF0000); // vertex C
+		}
+		if (render_method == DISPLAY_NORMALS) {
+			draw_rect(triangle.points[0].x , triangle.points[0].y , 16, 16, 0x00FF0000); // vertex C
 		}
 	}
 

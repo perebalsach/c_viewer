@@ -66,7 +66,6 @@ void load_obj_file_data(char *filename) {
 	char buffer[1024];
 	while (fgets(buffer, 1024, file)) {
 		if (strncmp(buffer, "vn ", 2) == 0) {
-
 		}
 		if (strncmp(buffer, "v ", 2) == 0) {
 			vec3_t vertex;
@@ -87,7 +86,7 @@ void load_obj_file_data(char *filename) {
 					.a = vertex_indices[0],
 					.b = vertex_indices[1],
 					.c = vertex_indices[2],
-					.color = 0xFFFFFF
+					.color = 0xFFFFFFFF
 			};
 			array_push(mesh.faces, face);
 		}
