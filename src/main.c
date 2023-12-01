@@ -8,6 +8,7 @@
 #include "mesh.h"
 #include "sorting.h"
 #include "matrix.h"
+#include "light.h"
 
 triangle_t *triangles_to_render = NULL;
 
@@ -84,8 +85,8 @@ void update(void) {
 
 	// Change the mesh scale, rotation, and translation values per animation frame
 	mesh.rotation.x += 0.01;
-	// mesh.rotation.y += 0.01;
-	// mesh.rotation.z += 0.01;
+	mesh.rotation.y += 0.01;
+	mesh.rotation.z += 0.01;
 	mesh.translation.z = 5.0;
 
 	// Create scale, rotation, and translation matrices that will be used to multiply the mesh vertices
@@ -129,27 +130,27 @@ void update(void) {
 		}
 
 		// Backface culling test to see if the current face should be projected
+		vec3_t vector_a = vec3_from_vec4(transformed_vertices[0]); /*   A   */
+		vec3_t vector_b = vec3_from_vec4(transformed_vertices[1]); /*  / \  */
+		vec3_t vector_c = vec3_from_vec4(transformed_vertices[2]); /* C---B */
+
+		// Get the vector subtraction of B-A and C-A
+		vec3_t vector_ab = vec3_sub(vector_b, vector_a);
+		vec3_t vector_ac = vec3_sub(vector_c, vector_a);
+		vec3_normalize(&vector_ab);
+		vec3_normalize(&vector_ac);
+
+		// Compute the face normal (using cross product to find perpendicular)
+		vec3_t normal = vec3_cross(vector_ab, vector_ac);
+		vec3_normalize(&normal);
+
+		// Find the vector between vertex A in the triangle and the camera origin
+		vec3_t camera_ray = vec3_sub(camera_position, vector_a);
+
+		// Calculate how aligned the camera ray is with the face normal (using dot product)
+		float dot_normal_camera = vec3_dot(normal, camera_ray);
+
 		if (cull_method == CULL_BACKFACE) {
-			vec3_t vector_a = vec3_from_vec4(transformed_vertices[0]); /*   A   */
-			vec3_t vector_b = vec3_from_vec4(transformed_vertices[1]); /*  / \  */
-			vec3_t vector_c = vec3_from_vec4(transformed_vertices[2]); /* C---B */
-
-			// Get the vector subtraction of B-A and C-A
-			vec3_t vector_ab = vec3_sub(vector_b, vector_a);
-			vec3_t vector_ac = vec3_sub(vector_c, vector_a);
-			vec3_normalize(&vector_ab);
-			vec3_normalize(&vector_ac);
-
-			// Compute the face normal (using cross product to find perpendicular)
-			vec3_t normal = vec3_cross(vector_ab, vector_ac);
-			vec3_normalize(&normal);
-
-			// Find the vector between vertex A in the triangle and the camera origin
-			vec3_t camera_ray = vec3_sub(camera_position, vector_a);
-
-			// Calculate how aligned the camera ray is with the face normal (using dot product)
-			float dot_normal_camera = vec3_dot(normal, camera_ray);
-
 			// Bypass the triangles that are looking away from the camera
 			if (dot_normal_camera < 0) {
 				continue;
@@ -175,13 +176,17 @@ void update(void) {
 		// Calculate the average depth for each face based on the vertices after transformation
 		float avg_depth = (transformed_vertices[0].z + transformed_vertices[1].z + transformed_vertices[2].z) / 3.0;
 
+		float light_intensity_factor = -vec3_dot(normal, light.direction);
+		// Calculate the percentage of the light against each normal
+		uint32_t triangle_color = light_apply_intensity(mesh_face.color, light_intensity_factor);
+
 		triangle_t projected_triangle = {
 				.points = {
 						{ projected_points[0].x, projected_points[0].y },
 						{ projected_points[1].x, projected_points[1].y },
 						{ projected_points[2].x, projected_points[2].y },
 				},
-				.color = mesh_face.color,
+				.color = triangle_color,// mesh_face.color,
 				.avg_depth = avg_depth
 		};
 
@@ -234,7 +239,7 @@ void render(void) {
 	// Clear the array of triangles to render every frame loop
 	array_free(triangles_to_render);
 	render_color_buffer();
-	clear_color_buffer(0xFF0000FF);
+	clear_color_buffer(0x000000);
 	SDL_RenderPresent(renderer);
 }
 
